@@ -1,18 +1,13 @@
 import axios from 'axios'
 // import Qs from 'qs'
-import {
-  Message,
-  MessageBox
-} from 'element-ui'
+import { Message, MessageBox } from 'element-ui'
 import store from '../store'
-import {
-  getToken
-} from '@/utils/auth'
+import { getToken } from '@/utils/auth'
 
 // 创建axios实例
 const service = axios.create({
   baseURL: process.env.BASE_API, // api的 base_url
-  timeout: 3, // 请求超时时间
+  timeout: 30000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }
@@ -66,9 +61,10 @@ service.interceptors.response.use(
     }
   },
   error => {
+    console.dir(error)
     console.log('err' + error) // for debug
     console.dir(error.response)
-    if (error.response.data.error === 'ERROR_ACCESS_NEED_AUTH') {
+    if (error.response && error.response.data.error === 'ERROR_ACCESS_NEED_AUTH') {
       // 登录失效
       MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
         confirmButtonText: '重新登录',
@@ -80,11 +76,13 @@ service.interceptors.response.use(
         })
       })
     }
-    Message({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
-    })
+    if (error.code === 'ECONNABORTED') {
+      Message({
+        message: '请求超时',
+        type: 'error',
+        duration: 7 * 1000
+      })
+    }
     return Promise.reject(error)
   }
 )
