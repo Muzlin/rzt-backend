@@ -53,7 +53,7 @@
       </div>
 
       <!-- dialog -->
-      <el-dialog :title="dialogUserAdd?'新增用户':'修改用户'" :visible.sync="dialogUserStatus" width="60%" v-loading="dialogUserLoading"
+      <el-dialog :title="dialogAdd?'新增用户':'修改用户'" :visible.sync="dialogStatus" width="60%" v-loading="dialogLoading"
         @close="dialogClose">
 
         <div style="display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start;">
@@ -64,28 +64,28 @@
             </el-checkbox-group>
           </div>
           <div style="width:50%;">
-            <el-form :model="userForm" ref="userForm" label-width="100px">
-              <el-form-item v-if="dialogUserAdd" label="用户名" prop="userName" required>
-                <el-input v-model="userForm.userName"></el-input>
+            <el-form :model="dialogForm" ref="dialogForm" label-width="100px">
+              <el-form-item v-if="dialogAdd" label="用户名" prop="userName" required>
+                <el-input v-model="dialogForm.userName"></el-input>
               </el-form-item>
               <el-form-item label="邮箱" prop="email" required>
-                <el-input v-model="userForm.email"></el-input>
+                <el-input v-model="dialogForm.email"></el-input>
               </el-form-item>
               <el-form-item label="手机号" prop="mobile" required>
-                <el-input v-model="userForm.mobile"></el-input>
+                <el-input v-model="dialogForm.mobile"></el-input>
               </el-form-item>
               <el-form-item label="密码" prop="password" required="">
-                <el-input type="password" v-model="userForm.password"></el-input>
+                <el-input type="password" v-model="dialogForm.password"></el-input>
               </el-form-item>
               <el-form-item label="备注" prop="remark">
-                <el-input v-model="userForm.remark"></el-input>
+                <el-input v-model="dialogForm.remark"></el-input>
               </el-form-item>
             </el-form>
           </div>
         </div>
 
         <div slot="footer" class="dialog-footer">
-          <el-button @click="dialogUserStatus = false">取 消</el-button>
+          <el-button @click="dialogStatus = false">取 消</el-button>
           <el-button type="primary" @click="dialogSubmit">确 定</el-button>
         </div>
       </el-dialog>
@@ -120,12 +120,12 @@
           page: 1,
           size: 10
         },
-        dialogUserStatus: false,
-        dialogUserAdd: true,
-        dialogUserLoading: false,
+        dialogStatus: false,
+        dialogAdd: true,
+        dialogLoading: false,
         checkRoles: [],
         allRoles: [],
-        userForm: {
+        dialogForm: {
           userName: '',
           email: '',
           mobile: '',
@@ -154,12 +154,12 @@
         })
       },
       closeDialogAndLoading() {
-        this.dialogUserStatus = false
-        this.dialogUserLoading = false
+        this.dialogStatus = false
+        this.dialogLoading = false
       },
       openDialogAndLoading() {
-        this.dialogUserStatus = true
-        this.dialogUserLoading = true
+        this.dialogStatus = true
+        this.dialogLoading = true
       },
       // 搜索栏
       handleSearch() {
@@ -173,26 +173,27 @@
       },
       // 操作按钮
       add() {
-        this.dialogUserAdd = true
+        this.dialogAdd = true
         this.openDialogAndLoading()
         // 获取所有角色
         getRoleList().then(data => {
           this.allRoles = data.content
-          this.dialogUserLoading = false
+          this.dialogLoading = false
         }, () => {
-          this.closeDialogAndLoading()
+          // this.closeDialogAndLoading()
+          this.dialogLoading = false
         })
       },
       edit() {
         if (this.table.tableChangeId.length !== 1) {
           this.$message.info('请选择一条数据')
         } else {
-          this.dialogUserAdd = false
+          this.dialogAdd = false
           this.openDialogAndLoading()
           // 获取所有角色
           getRoleList().then(data => {
             this.allRoles = data.content
-            this.dialogUserLoading = false
+            this.dialogLoading = false
           }, () => {
             this.closeDialogAndLoading()
             return
@@ -203,8 +204,8 @@
             // 默认选中用户已有的角色 如果没有初始化为数组
             this.checkRoles = data.roleIds || []
             // 填充用户已有的数据
-            this.userForm = data.sysUserPo || {}
-            this.dialogUserLoading = false
+            this.dialogForm = data.sysUserPo || {}
+            this.dialogLoading = false
           }, () => {
             this.closeDialogAndLoading()
           })
@@ -246,7 +247,7 @@
       },
       // dialog
       dialogSubmit() {
-        this.$refs.userForm.validate(valid => {
+        this.$refs.dialogForm.validate(valid => {
           if (valid) {
             if (this.checkRoles.length === 0) {
               this.$confirm('确定不分配角色吗, 是否继续?', '添加人员', {
@@ -266,31 +267,31 @@
       },
       dialogClose() {
         this.checkRoles = []
-        this.userForm = {}
-        this.$refs.userForm.resetFields()
+        this.dialogForm = {}
+        this.$refs.dialogForm.resetFields()
       },
       executeSubmit() {
-        this.dialogUserLoading = true
+        this.dialogLoading = true
         console.log(this.checkRoles)
-        if (this.dialogUserAdd) {
+        if (this.dialogAdd) {
           addUser({
             roleIds: this.checkRoles,
-            sysUserPo: this.userForm
+            sysUserPo: this.dialogForm
           }).then(data => {
             this.closeDialogAndLoading()
             this.getList()
           }, () => {
-            this.dialogUserLoading = false
+            this.dialogLoading = false
           })
         } else {
           editUser({
             roleIds: this.checkRoles,
-            sysUserPo: this.userForm
+            sysUserPo: this.dialogForm
           }).then(data => {
             this.closeDialogAndLoading()
             this.getList()
           }, () => {
-            this.dialogUserLoading = false
+            this.dialogLoading = false
           })
         }
       }

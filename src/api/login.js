@@ -11,7 +11,7 @@ export function loginByUsername(username, password) {
   return request({
     url: '/security/token',
     method: 'post',
-    data
+    params: data
   })
 }
 

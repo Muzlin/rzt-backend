@@ -1,10 +1,16 @@
 {
   "cSpell.words": [
     "Eval",
+    "addfunc",
     "authredirect",
     "autosize",
     "backend",
     "clearfix",
+    "delfunc",
+    "editfunc",
+    "endregion",
+    "funcinfo",
+    "funclist",
     "hebao",
     "nprogress",
     "prepend",

@@ -1,13 +1,18 @@
 import axios from 'axios'
 // import Qs from 'qs'
-import { Message, MessageBox } from 'element-ui'
+import {
+  Message,
+  MessageBox
+} from 'element-ui'
 import store from '../store'
-import { getToken } from '@/utils/auth'
+import {
+  getToken
+} from '@/utils/auth'
 
 // 创建axios实例
 const service = axios.create({
   baseURL: process.env.BASE_API, // api的 base_url
-  timeout: 30000, // 请求超时时间
+  timeout: 3000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
   }
@@ -25,6 +30,7 @@ const service = axios.create({
 service.interceptors.request.use(config => {
   if (store.getters.token) {
     config.headers['Authorization'] = `Bearer ${getToken()}` // 请求携带自定义token
+    config.method = 'post' // 默认请求post
   }
   return config
 }, error => {
@@ -37,8 +43,37 @@ service.interceptors.request.use(config => {
 service.interceptors.response.use(
   response => {
     const res = response.data
-    if (!res.success) { // 改为 isSuccess接口返回 isSuccess
-      if (res.error === 'ERROR_ACCESS_NEED_AUTH') {
+    if (!res.code) {
+      // if (res.error === 'ERROR_ACCESS_NEED_AUTH') {
+      //   MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
+      //     confirmButtonText: '重新登录',
+      //     cancelButtonText: '取消',
+      //     type: 'warning'
+      //   }).then(() => {
+      //     store.dispatch('FedLogOut').then(() => {
+      //       location.reload() // 为了重新实例化vue-router对象 避免bug
+      //     })
+      //   })
+      // } else {
+      Message.error(res.message || 'status 为200 但是code 不存在')
+      // }
+      return Promise.reject('error')
+    } else {
+      if (res.result === undefined || Object.keys(res.result).length === 0) {
+        res.result = []
+      }
+      console.log('response ================>', res)
+      return res
+    }
+  },
+  error => {
+    console.log('resp-error========>')
+    console.dir(error.response)
+    // data存在
+    if (error.response) {
+      Message.error(`${error.response.status}:${error.response.data}`)
+      if (error.response.data.error === 'ERROR_ACCESS_NEED_AUTH') {
+        // 登录失效
         MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
           confirmButtonText: '重新登录',
           cancelButtonText: '取消',
@@ -48,33 +83,7 @@ service.interceptors.response.use(
             location.reload() // 为了重新实例化vue-router对象 避免bug
           })
         })
-      } else {
-        Message.error(res.errorDescription || 'code 为200 但是isSuccess 状态不存在')
       }
-      return Promise.reject('error')
-    } else {
-      console.log('response ================>', response)
-      if (response.data.result !== undefined && Object.keys(response.data.result).length === 0) {
-        response.data.result = []
-      }
-      return response.data.result
-    }
-  },
-  error => {
-    console.dir(error)
-    console.log('err' + error) // for debug
-    console.dir(error.response)
-    if (error.response && error.response.data.error === 'ERROR_ACCESS_NEED_AUTH') {
-      // 登录失效
-      MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
-        confirmButtonText: '重新登录',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        store.dispatch('FedLogOut').then(() => {
-          location.reload() // 为了重新实例化vue-router对象 避免bug
-        })
-      })
     }
     if (error.code === 'ECONNABORTED') {
       Message({

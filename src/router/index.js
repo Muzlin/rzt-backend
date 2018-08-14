@@ -54,10 +54,10 @@ import operation from './modules/operation'
 import project from './modules/project'
 import provider from './modules/provider'
 import user from './modules/user'
-import system from './modules/system'
+import system_management from './modules/system-management'
 
 export const asyncRouterMap = [
-  ...system,
+  ...system_management,
   ...project,
   ...user,
   ...capital,

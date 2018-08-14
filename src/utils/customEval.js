@@ -1,6 +1,7 @@
 /**
-* @Author: jianglei
-* @Date:   2017-10-12 12:06:49
+* 格式化树形json
+* @Author: muzlin
+* @Date:   2018-08-08 09:27:30
 */
 'use strict'
 import Vue from 'vue'
