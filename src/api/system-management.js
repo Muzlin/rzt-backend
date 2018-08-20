@@ -9,7 +9,22 @@ import request from '@/utils/request'
  * @param {*} payload {pageNum,pageSize}
  * @returns
  */
-export function getFuncList(payload) {
+export function getFuncPage(payload) {
+  return request({
+    url: '/sys/funcListPage',
+    method: 'post',
+    data: payload
+  })
+}
+
+/**
+ * 获取所有功能
+ *
+ * @export
+ * @param {*} payload {pageNum,pageSize}
+ * @returns
+ */
+export function getFuncAll(payload) {
   return request({
     url: '/sys/funcList',
     method: 'post',
