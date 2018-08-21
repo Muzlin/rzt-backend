@@ -1,61 +1,42 @@
 import router from './router'
 import store from './store'
-// import { Message } from 'element-ui'
+import { Message } from 'element-ui'
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css'// progress bar style
 import { getToken } from '@/utils/auth' // getToken from cookie
 
 NProgress.configure({ showSpinner: false })// NProgress Configuration
 
-// permission judge function
-function hasPermission(roles, permissionRoles) {
-  if (roles.indexOf('admin') >= 0) return true // admin permission passed directly
-  if (!permissionRoles) return true
-  return roles.some(role => permissionRoles.indexOf(role) >= 0)
-}
-
 const whiteList = ['/login', '/authredirect']// no redirect whitelist
 
 router.beforeEach((to, from, next) => {
-  NProgress.start() // start progress bar
-  if (getToken()) { // determine if there has token
-    /* has token*/
+  NProgress.start() // 顶部进度条开始
+  // 判断是否有token
+  if (getToken()) {
+    // token 存在不允许重定向到login
     if (to.path === '/login') {
       next({ path: '/' })
       NProgress.done() // if current page is dashboard will not trigger	afterEach hook, so manually handle it
     } else {
-      if (store.getters.roles.length === 0) { // 判断当前用户是否已拉取完user_info信息
-        // store.dispatch('GetUserInfo').then(res => { // 拉取user_info
-        //   const roles = res.data.roles // note: roles must be a array! such as: ['editor','develop']
-        //   store.dispatch('GenerateRoutes', { roles }).then(() => { // 根据roles权限生成可访问的路由表
-        //     router.addRoutes(store.getters.addRouters) // 动态添加可访问路由表
-        //     next({ ...to, replace: true }) // hack方法 确保addRoutes已完成 ,set the replace: true so the navigation will not leave a history record
-        //   })
-        // }).catch((err) => {
-        //   store.dispatch('FedLogOut').then(() => {
-        //     Message.error(err || 'Verification failed, please login again')
-        //     next({ path: '/' })
-        //   })
-        // })
-        // roles: ['admin'],
-        // token: 'admin',
-        // introduction: '我是超级管理员',
-        // avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-        // name: 'Super Admin'
-        const roles = ['admin']// res.data.roles // note: roles must be a array! such as: ['editor','develop']
-        store.dispatch('GenerateRoutes', { roles }).then(() => { // 根据roles权限生成可访问的路由表
-          router.addRoutes(store.getters.addRouters) // 动态添加可访问路由表
-          next({ ...to, replace: true }) // hack方法 确保addRoutes已完成 ,set the replace: true so the navigation will not leave a history record
+      // 访问其他页面 判断是否拉取拥有的菜单列表
+      if (store.getters.menus.length === 0) {
+        // 如果没有拉取菜单 则拉取所拥有的菜单列表
+        store.dispatch('GetUserMenus').then(data => {
+          // 根据已有的菜单列表生成可访问的路由表
+          store.dispatch('GenerateRoutes', data).then(() => {
+            // 动态添加可访问路由表
+            router.addRoutes(store.getters.addRouters)
+            // hack方法 确保addRoutes已完成 ,set the replace: true so the navigation will not leave a history record
+            next({ ...to, replace: true })
+          }).catch((err) => {
+            store.dispatch('FedLogOut').then(() => {
+              Message.error(err || '权限获取失败,请重新登录')
+              next({ path: '/' })
+            })
+          })
         })
-        next()
       } else {
-        // 没有动态改变权限的需求可直接next() 删除下方权限判断 ↓
-        if (hasPermission(store.getters.roles, to.meta.roles)) {
-          next()//
-        } else {
-          next({ path: '/401', replace: true, query: { noGoBack: true }})
-        }
-        // 可删 ↑
+        next()
       }
     }
   } else {

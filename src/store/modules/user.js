@@ -1,45 +1,36 @@
-import { loginByUsername, logout, getUserInfo } from '@/api/login'
-import { getToken, setToken, removeToken } from '@/utils/auth'
+import {
+  loginByUsername,
+  logout,
+  getUserInfo
+} from '@/api/login'
+import {
+  getToken,
+  setToken,
+  removeToken
+} from '@/utils/auth'
+import {
+  getMenuList
+} from '@/api/system-management'
+import {
+  MessageBox
+} from 'element-ui'
 
 const user = {
   state: {
-    user: '',
-    status: '',
-    code: '',
     token: getToken(),
-    name: '',
     avatar: '',
-    introduction: '',
-    roles: [],
-    setting: {
-      articlePlatform: []
-    }
+    menus: []
   },
 
   mutations: {
-    SET_CODE: (state, code) => {
-      state.code = code
-    },
     SET_TOKEN: (state, token) => {
       state.token = token
     },
-    SET_INTRODUCTION: (state, introduction) => {
-      state.introduction = introduction
-    },
-    SET_SETTING: (state, setting) => {
-      state.setting = setting
-    },
-    SET_STATUS: (state, status) => {
-      state.status = status
-    },
-    SET_NAME: (state, name) => {
-      state.name = name
-    },
     SET_AVATAR: (state, avatar) => {
-      state.avatar = avatar
+      state.avatar = avatar || 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
     },
-    SET_ROLES: (state, roles) => {
-      state.roles = roles
+    SET_MENUS: (state, menus) => {
+      state.menus = menus
     }
   },
 
@@ -61,27 +52,27 @@ const user = {
       })
     },
 
-    // 获取用户信息
-    GetUserInfo({ commit, state }) {
+    // 获取用户菜单信息
+    GetUserMenus({ commit }) {
       return new Promise((resolve, reject) => {
-        getUserInfo(state.token).then(response => {
-          if (!response.data) {
-            reject('error')
-          }
-          const data = response.data
-
-          if (data.roles && data.roles.length > 0) { // 验证返回的roles是否是一个非空数组
-            commit('SET_ROLES', data.roles)
+        getMenuList().then(data => {
+          if (data.result.length === 0) {
+            MessageBox.confirm('你当前暂无权限，可以取消继续留在该页面，或者退出', '确定登出', {
+              confirmButtonText: '退出',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }).then(() => {
+              this.FedLogOut.then(() => {
+                location.reload() // 为了重新实例化vue-router对象 避免bug
+              })
+            })
           } else {
-            reject('getInfo: roles must be a non-null array !')
+            // 设置拥有的菜单
+            commit('SET_MENUS', data.result)
           }
-
-          commit('SET_NAME', data.name)
-          commit('SET_AVATAR', data.avatar || 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif')
-          commit('SET_INTRODUCTION', data.introduction)
-          resolve(response)
-        }).catch(error => {
-          reject(error)
+          resolve(data.result)
+        }).catch(err => {
+          reject(err)
         })
       })
     },
@@ -101,7 +92,10 @@ const user = {
     // },
 
     // 登出
-    LogOut({ commit, state }) {
+    LogOut({
+      commit,
+      state
+    }) {
       return new Promise((resolve, reject) => {
         logout(state.token).then(() => {
           commit('SET_TOKEN', '')
@@ -115,7 +109,9 @@ const user = {
     },
 
     // 前端 登出
-    FedLogOut({ commit }) {
+    FedLogOut({
+      commit
+    }) {
       return new Promise(resolve => {
         commit('SET_TOKEN', '')
         removeToken()
@@ -124,7 +120,9 @@ const user = {
     },
 
     // 动态修改权限
-    ChangeRoles({ commit }, role) {
+    ChangeRoles({
+      commit
+    }, role) {
       return new Promise(resolve => {
         commit('SET_TOKEN', role)
         setToken(role)

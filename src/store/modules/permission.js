@@ -1,28 +1,22 @@
-import { asyncRouterMap, constantRouterMap } from '@/router'
-
-/**
- * 通过meta.role判断是否与当前用户权限匹配
- * @param roles
- * @param route
- */
-function hasPermission(roles, route) {
-  if (route.meta && route.meta.roles) {
-    return roles.some(role => route.meta.roles.indexOf(role) >= 0)
-  } else {
-    return true
-  }
-}
+import {
+  asyncRouterMap,
+  constantRouterMap
+} from '@/router'
 
 /**
  * 递归过滤异步路由表，返回符合用户角色权限的路由表
- * @param asyncRouterMap
- * @param roles
+ * @param asyncRouterMap 异步路由表
+ * @param menus 用户已拥有的菜单
  */
-function filterAsyncRouter(asyncRouterMap, roles) {
+function filterAsyncRouter(asyncRouterMap, menus) {
+  const menusStr = JSON.stringify(menus)
+  // filter 过滤器返回一个新的数组
   const accessedRouters = asyncRouterMap.filter(route => {
-    if (hasPermission(roles, route)) {
+    // 通过title匹配
+    if (menusStr.indexOf(route.meta.title) >= 0) {
+      // 父级匹配到 则继续匹配子级
       if (route.children && route.children.length) {
-        route.children = filterAsyncRouter(route.children, roles)
+        route.children = filterAsyncRouter(route.children, menus)
       }
       return true
     }
@@ -43,15 +37,13 @@ const permission = {
     }
   },
   actions: {
-    GenerateRoutes({ commit }, data) {
+    // 根据菜单列表生成可访问的路由表
+    GenerateRoutes({
+      commit,
+      rootState
+    }, data) {
       return new Promise(resolve => {
-        const { roles } = data
-        let accessedRouters
-        if (roles.indexOf('admin') >= 0) {
-          accessedRouters = asyncRouterMap
-        } else {
-          accessedRouters = filterAsyncRouter(asyncRouterMap, roles)
-        }
+        const accessedRouters = filterAsyncRouter(asyncRouterMap, data)
         commit('SET_ROUTERS', accessedRouters)
         resolve()
       })
