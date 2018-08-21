@@ -31,7 +31,7 @@
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pageForm.pageNum"
-          :page-sizes="[10,20,30,50]" :page-size="pageForm.pageSize" layout="total, sizes, prev, pager, next, jumper" :page-count="pageForm.total">
+          :page-sizes="[10,20,30,50]" :page-size="pageForm.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="pageForm.total">
         </el-pagination>
       </div>
 
@@ -96,32 +96,14 @@
     getMenuList,
     getMenuActionList
   } from '@/api/system-management'
+  import {} from '@/api/system-management'
+  import customEvalArray from './eval.js'
   export default {
     name: 'sys-setting-role', // name 必须跟路由的name 不然不能缓存
     data() {
       return {
         table: {
-          list: [{
-            'name': '业务专员',
-            'remark': '业务专员角色',
-            'id': '11123121'
-          }, {
-            'name': '风控专员',
-            'remark': '风控专员角色',
-            'id': '2321321'
-          }, {
-            'name': '财务经理',
-            'remark': '财务经理角色',
-            'id': '11123121231312'
-          }, {
-            'name': '业务经理',
-            'remark': '业务经理角色',
-            'id': '11123121232132e6'
-          }, {
-            'name': '运营专员',
-            'remark': '运营专员角色',
-            'id': '11123121h283d98'
-          }],
+          list: [],
           loading: false,
           tableChange: []
         },
@@ -135,56 +117,7 @@
         dialogAdd: true,
         dialogForm: {},
         // 分配权限的菜单树
-        menuList: [{
-          'id': '1',
-          'title': '菜单3',
-          'level': 1,
-          'parentId': '0',
-          'show': 'true',
-          'sort': 3,
-          'ico': 'bug',
-          'remark': 'fuck ---',
-          'url': '/sys-manage-menu/mo',
-          'disabled': true,
-          'children': [{
-            'id': '2',
-            'title': '菜单123',
-            'level': 3,
-            'parentId': '2131233',
-            'show': true,
-            'sort': 1
-          }, {
-            'id': '3',
-            'title': '菜单123',
-            'level': 3,
-            'parentId': '2131233',
-            'show': true,
-            'sort': 1
-          }, {
-            'id': '4',
-            'title': '菜单23',
-            'level': 2,
-            'parentId': '2131233',
-            'show': true,
-            'sort': 2,
-            'disabled': true,
-            'children': [{
-              'id': '5',
-              'title': '菜单123',
-              'level': 3,
-              'parentId': '2131233',
-              'show': true,
-              'sort': 1
-            }, {
-              'id': '6',
-              'title': '菜单23',
-              'level': 2,
-              'parentId': '2131233',
-              'show': true,
-              'sort': 2
-            }]
-          }]
-        }],
+        menuList: [],
         // 选中的菜单
         checkedMenuList: [],
         // 根据选中的菜单获取菜单拥有的功能
@@ -208,8 +141,8 @@
           pageNum: this.pageForm.pageNum,
           pageSize: this.pageForm.pageSize
         }).then(data => {
-          // this.table.list = data.result || []
-          // this.pageForm.total = data.total || 0
+          this.table.list = data.result
+          this.pageForm.total = data.total
           this.table.loading = false
         }, () => {
           this.table.loading = false
@@ -229,9 +162,6 @@
         this.resetPage()
         // 请求数据
         this.getList()
-      },
-      resetSearch() {
-        this.$refs.searchForm.resetFields()
       },
       /** 操作栏 */
       add() {
@@ -330,7 +260,8 @@
         this.currentRoleNode = e
         // 获取树形菜单
         getMenuList().then(data => {
-          this.menuList = data.result
+          // 处理菜单数据 如果没有路由地址则不允许选中
+          this.menuList = customEvalArray(data.result)
         })
       },
       // 分配权限dialog 关闭事件
@@ -354,24 +285,6 @@
               })
             })
           })
-          // const att = [{
-          //   name: '查询',
-          //   id: '1'
-          // }, {
-          //   name: '删除',
-          //   id: '2'
-          // }, {
-          //   name: '修改',
-          //   id: '3'
-          // }]
-          // att.forEach(item => {
-          //   // 构造功能数据
-          //   actions.list.push({
-          //     actionName: item.name,
-          //     id: item.id
-          //   })
-          // })
-          // push到 actionList
           this.actionList.push(actions)
         } else {
           // 取消选中 移除功能数据

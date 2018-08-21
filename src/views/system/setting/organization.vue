@@ -1,10 +1,18 @@
 <template>
   <div class="post-container">
     <div class="post-main-container">
+      <!-- 操作按钮 -->
+      <el-card class="box-card">
+        <div class="card-header">
+          <span>操作</span>
+          <el-row>
+            <el-button type="primary" size="mini" @click="addTopOrgan">添加顶级机构</el-button>
+          </el-row>
+        </div>
+      </el-card>
+
       <!-- table list -->
       <tree-table :data="organizationList" v-loading="loading" border>
-        <el-table-column label="名称" prop="name" width="80px">
-        </el-table-column>
         <el-table-column label="描述" prop="remark">
         </el-table-column>
         <el-table-column label="是否启用" width="80px;">
@@ -39,8 +47,8 @@
           </el-form-item>
           <el-form-item label="是否启用">
             <el-select v-model="dialogForm.use" placeholder="请选择状态">
-              <el-option label="启用" value="1"></el-option>
-              <el-option label="禁用" value="0"></el-option>
+              <el-option label="启用" value="true"></el-option>
+              <el-option label="禁用" value="false"></el-option>
             </el-select>
           </el-form-item>
         </el-form>
@@ -80,8 +88,8 @@
             </el-form-item>
             <el-form-item label="是否启用">
               <el-select v-model="dialogJobForm.use" placeholder="请选择">
-                <el-option label="启用" value="1"></el-option>
-                <el-option label="禁用" value="0"></el-option>
+                <el-option label="启用" value="true"></el-option>
+                <el-option label="禁用" value="false"></el-option>
               </el-select>
             </el-form-item>
           </el-form>
@@ -122,6 +130,7 @@
     getRoleList,
     distrJobRoles
   } from '@/api/system-management'
+  import createUniqueString from '@/utils/createUniqueString'
   export default {
     name: 'sys-setting-organization',
     components: {
@@ -130,60 +139,17 @@
     data() {
       return {
         loading: false,
-        organizationList: [{
-          id: '1111',
-          name: '总公司',
-          parentId: '',
-          remark: '总公司',
-          use: '启用',
-          children: [{
-            id: '2222',
-            name: '一分公司',
-            parentId: '',
-            remark: '一分公司',
-            use: '启用',
-            children: [{
-              id: '22221111',
-              name: '研发部',
-              parentId: '',
-              remark: '研发部',
-              use: '启用',
-              children: [{
-                id: '222211112321',
-                name: '产品部',
-                parentId: '',
-                remark: '产品部',
-                use: '启用'
-              }, {
-                id: '2222111123213e213',
-                name: '网络部',
-                parentId: '',
-                remark: '网络部',
-                use: '启用'
-              }]
-            }, {
-              id: '22222222',
-              name: '财务部',
-              parentId: '',
-              remark: '财务部',
-              use: '启用'
-            }]
-          }, {
-            id: '3333',
-            name: '二分公司',
-            parentId: '',
-            remark: '二分公司',
-            use: '启用'
-          }]
-        }],
+        organizationList: [],
         dialogStatus: false,
         dialogAdd: true,
         dialogForm: {
           parentId: '',
-          use: '1'
+          use: 'true'
         },
         dialogJobStatus: false,
-        dialogJobForm: {},
+        dialogJobForm: {
+          use: 'true'
+        },
         dialogJobInnerStatus: false,
         dialogJobAdd: false,
         // 当前选择的机构标题
@@ -191,50 +157,13 @@
         // 当前选择的机构ID
         currentOrganizationId: '',
         // 机构拥有的岗位
-        jobOwnList: [{
-          name: '研发经理',
-          remark: '研发经理岗位',
-          jobId: '11w213213'
-        },
-        {
-          name: '风控经理',
-          remark: '风控经理岗位',
-          jobId: '11w217879d0983213'
-        }
-        ],
+        jobOwnList: [],
         // 分配角色dialog
         dialogRoleInnerStatus: false,
         // 已选中的角色列表
-        checkRoleList: ['2', '3'],
+        checkRoleList: [],
         // 所有角色列表
-        roleList: [{
-          name: '风控专员',
-          id: '1'
-        }, {
-          name: '风控专员1',
-          id: '2'
-        }, {
-          name: '风控专员2',
-          id: '3'
-        }, {
-          name: '风控专员3',
-          id: '4'
-        }, {
-          name: '风控专员4',
-          id: '5'
-        }, {
-          name: '风控专员5',
-          id: '6'
-        }, {
-          name: '风控专员6',
-          id: '7'
-        }, {
-          name: '风控专员7',
-          id: '8'
-        }, {
-          name: '风控专员8',
-          id: '9'
-        }]
+        roleList: []
       }
     },
     created() {
@@ -245,10 +174,18 @@
         this.loading = true
         getOrganizationList().then(data => {
           this.loading = false
-          // this.organizationList = data.result
+          this.organizationList = data.result
         }, () => {
           this.loading = false
         })
+      },
+      // 添加顶级机构
+      addTopOrgan() {
+        this.dialogAdd = true
+        this.dialogStatus = true
+        this.currentOrganizationName = '顶级机构'
+        this.currentOrganizationId = ''
+        this.dialogForm.parentId = createUniqueString()
       },
       // 机构树形列表 添加按钮事件
       add(node) {
@@ -256,14 +193,15 @@
         this.dialogStatus = true
         this.currentOrganizationName = node.name
         this.currentOrganizationId = node.id
+        this.dialogForm.parentId = node.id
       },
       // 机构树形列表 修改按钮事件
       edit(node) {
-        getOrganization({
-          id: node.id
-        }).then(data => {
+        getOrganization(node.id).then(data => {
           this.dialogStatus = true
           this.dialogAdd = false
+          console.log(data.result)
+          data.result.use = data.result.use.toString()
           this.dialogForm = data.result
         })
       },
@@ -297,12 +235,12 @@
             if (this.dialogAdd) {
               addOrganization(this.dialogForm).then(data => {
                 this.getList()
-                console.log(data)
+                this.dialogStatus = false
               })
             } else {
               editOrganization(this.dialogForm).then(data => {
                 this.getList()
-                console.log(data)
+                this.dialogStatus = false
               })
             }
           }
@@ -346,6 +284,8 @@
       addJob() {
         this.dialogJobInnerStatus = true
         this.dialogJobAdd = true
+        // 绑定当前选择的机构ID
+        this.dialogJobForm.organizationId = this.currentOrganizationId
       },
       // 修改机构已分配岗位
       editJob(e) {
@@ -356,7 +296,7 @@
         // 开启内层dialog
         this.dialogJobInnerStatus = true
         // 获取岗位信息
-        getJob({ id: e.id }).then(data => {
+        getJob(e.id).then(data => {
           this.dialogJobForm = data.result
         })
       },

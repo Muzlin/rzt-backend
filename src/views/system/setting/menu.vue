@@ -1,6 +1,16 @@
 <template>
   <div class="post-container">
     <div class="post-main-container">
+      <!-- 操作按钮 -->
+      <el-card class="box-card">
+        <div class="card-header">
+          <span>操作</span>
+          <el-row>
+            <el-button type="primary" size="mini" @click="addTopMenu">添加顶级菜单</el-button>
+          </el-row>
+        </div>
+      </el-card>
+
       <!-- table list -->
       <tree-table :data="menuList" v-loading="loading" border>
         <el-table-column label="图标" width="80px;">
@@ -9,6 +19,9 @@
           </template>
         </el-table-column>
         <el-table-column label="是否显示" prop="show" width="80px">
+          <template slot-scope="scope">
+            <span>{{scope.row.show?'显示':'隐藏'}}</span>
+          </template>
         </el-table-column>
         <el-table-column label="描述" prop="remark">
         </el-table-column>
@@ -47,8 +60,8 @@
           </el-form-item>
           <el-form-item label="是否显示">
             <el-select v-model="dialogForm.show" placeholder="请选择状态">
-              <el-option label="显示" value="1"></el-option>
-              <el-option label="隐藏" value="0"></el-option>
+              <el-option label="显示" value="true"></el-option>
+              <el-option label="隐藏" value="false"></el-option>
             </el-select>
           </el-form-item>
         </el-form>
@@ -59,7 +72,7 @@
       </el-dialog>
 
       <!-- 分配功能 dialog -->
-      <el-dialog title="分配功能" :visible.sync="dialogActionStatus" @close="dialogActionClose">
+      <el-dialog title="分配功能" :visible.sync="dialogActionStatus">
         <el-row>
           <el-tag type="danger" style="margin-bottom:10px;">当前菜单:{{currentMenuTitle}}</el-tag>
           <el-button type="primary" size="mini" @click="addAction">添加</el-button>
@@ -123,10 +136,11 @@
     delMenu,
     editMenu,
     addMenu,
-    getFuncList,
+    getFuncAll,
     getMenuActionList,
     distrMenuActions
   } from '@/api/system-management'
+  import createUniqueString from '@/utils/createUniqueString'
   export default {
     name: 'sys-setting-menu',
     components: {
@@ -135,115 +149,84 @@
     data() {
       return {
         loading: false,
-        menuList: [{
-          'id': '2131233',
-          'title': '菜单3',
-          'level': 1,
-          'parentId': '0',
-          'show': 'true',
-          'sort': 3,
-          'ico': 'bug',
-          'remark': 'fuck ---',
-          'url': '/sys-manage-menu/mo',
-          'children': [{
-            'id': '213123123',
-            'title': '菜单123',
-            'level': 3,
-            'parentId': '2131233',
-            'show': true,
-            'sort': 1
-          }, {
-            'id': '213123123',
-            'title': '菜单123',
-            'level': 3,
-            'parentId': '2131233',
-            'show': true,
-            'sort': 1
-          }, {
-            'id': '21312323',
-            'title': '菜单23',
-            'level': 2,
-            'parentId': '2131233',
-            'show': true,
-            'sort': 2,
-            'children': [{
-              'id': '213123123',
-              'title': '菜单123',
-              'level': 3,
-              'parentId': '2131233',
-              'show': true,
-              'sort': 1
-            }, {
-              'id': '21312323',
-              'title': '菜单23',
-              'level': 2,
-              'parentId': '2131233',
-              'show': true,
-              'sort': 2
-            }]
-          }]
-        }],
+        menuList: [],
         dialogStatus: false,
         dialogAdd: true,
         dialogForm: {
           parentId: '',
-          show: '1'
+          show: 'true'
         },
         dialogActionStatus: false,
         dialogActionForm: {},
         dialogActionInnerStatus: false,
         dialogActionAdd: false,
         // 当前选择的菜单标题
-        currentMenuTitle: null,
+        currentMenuTitle: '顶级菜单',
         // 当前选择的菜单ID
         currentMenuId: '',
         // 菜单拥有的功能
-        actionOwnList: [{
-          apiUrl: '/sys/funclist',
-          name: '查询',
-          remark: '我是描述',
-          routeUrl: '/system/mo'
-        }],
+        actionOwnList: [],
         // 功能字典
-        actionDicList: [{
-          name: '新增',
-          id: '387219743189280921'
-        },
-        {
-          name: '删除',
-          id: '3872198uu9o743189280921'
-        }
-        ]
+        actionDicList: []
       }
     },
     created() {
+      // 获取菜单列表
       this.getList()
+      // 获取功能字典
+      getFuncAll().then(data => {
+        data.result.forEach(item => {
+          const actionDic = {}
+          actionDic.id = item.id
+          actionDic.name = item.name
+          this.actionDicList.push(actionDic)
+        })
+      })
     },
     methods: {
       getList() {
         this.loading = true
         getMenuList().then(data => {
           this.loading = false
-          // this.menuList = data.result
+          this.menuList = data.result
         }, () => {
           this.loading = false
         })
       },
+      // 添加顶级菜单
+      addTopMenu() {
+        // 变更dialog 为新增
+        this.dialogAdd = true
+        // 打开dialog
+        this.dialogStatus = true
+        // 重置数据
+        this.currentMenuId = ''
+        this.dialogForm.parentId = createUniqueString()
+        this.currentMenuTitle = '顶级菜单'
+      },
       // 菜单树形列表 添加按钮事件
       add(node) {
+        // 变更dialog 为新增
         this.dialogAdd = true
+        // 打开dialog
         this.dialogStatus = true
+        // 绑定当前的菜单标题
         this.currentMenuTitle = node.title
-        this.currentMenuId = node.id
+        // 添加父级菜单ID
+        this.dialogForm.parentId = node.id
       },
       // 菜单树形列表 修改按钮事件
       edit(node) {
-        getMenu({
-          id: node.id
-        }).then(data => {
-          this.dialogStatus = true
+        getMenu(node.id).then(data => {
+          // 变更dialog 为修改
           this.dialogAdd = false
-          this.dialogForm = data
+          // 打开dialog
+          this.dialogStatus = true
+          // 添加父级菜单ID
+          this.dialogForm.parentId = node.id
+          // 绑定获取的菜单信息
+          data.result.show = data.result.show.toString()
+          this.dialogForm = data.result
         })
       },
       // 菜单树形列表 删除按钮事件
@@ -253,7 +236,7 @@
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-          delMenu(node.id).then(() => {
+          delMenu([node.id]).then(() => {
             this.$message.success('删除成功')
             this.getList()
           })
@@ -275,12 +258,12 @@
             if (this.dialogAdd) {
               addMenu(this.dialogForm).then(data => {
                 this.getList()
-                console.log(data)
+                this.dialogStatus = false
               })
             } else {
               editMenu(this.dialogForm).then(data => {
                 this.getList()
-                console.log(data)
+                this.dialogStatus = false
               })
             }
           }
@@ -291,13 +274,8 @@
         this.$refs.dialogForm.resetFields()
         // 清空data 里面的数据
         this.dialogForm = {
-          show: '1'
+          show: 'true'
         }
-      },
-      // 分配菜单外层dialog 关闭事件
-      dialogActionClose() {
-        // 重新获取已拥有功能列表
-
       },
       // 分配菜单内层dialog 关闭事件
       dialogActionInnerClose() {
@@ -308,7 +286,7 @@
       },
       // 删除菜单功能
       delAction(e) {
-        this.$confirm('确定删除该功能, 是否继续?', '删除菜单', {
+        this.$confirm('确定删除该功能, 是否继续?', '删除功能', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
@@ -330,25 +308,16 @@
         this.dialogActionForm = e
         // 开启内层dialog
         this.dialogActionInnerStatus = true
-        // 获取功能字典
-        getFuncList({ pageNum: '1', pageSize: '10000' }).then(data => {
-          const actionDic = {}
-          data.forEach(item => {
-            actionDic.id = item.id
-            actionDic.name = item.name
-            this.actionDicList.push(actionDic)
-          })
-        })
       },
       // 分配菜单功能内层确定事件
       dialogActionInnerSubmit() {
         if (this.dialogActionAdd) {
           // 新增菜单功能 添加到功能列表中
-          console.log(this.dialogActionForm)
           this.actionOwnList.push(this.dialogActionForm)
         } else {
           // 修改菜单功能
           this.actionOwnList.forEach(item => {
+            // 根据ID 将已拥有的功能列表对应修改赋值
             if (item.id === this.dialogActionForm.id) {
               item = this.dialogActionForm
             }
@@ -357,7 +326,7 @@
         // 关闭内层dialog
         this.dialogActionInnerStatus = false
       },
-      // 菜单分配功能 新增功能提交事件
+      // 分配菜单功能
       dialogActionSubmit() {
         if (this.actionOwnList.length === 0) {
           this.$message.error('请先添加功能')
@@ -369,6 +338,8 @@
         }).then(() => {
           // 关闭分配功能外层dialog
           this.dialogActionStatus = false
+          // 消息提示
+          this.$message.success('操作成功')
         })
       }
     }

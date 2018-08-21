@@ -157,8 +157,7 @@ export function editMenu(payload) {
  */
 export function getMenuList() {
   return request({
-    url: '/sys/menuList',
-    method: 'post'
+    url: '/sys/menuList'
   })
 }
 

@@ -43,26 +43,16 @@ service.interceptors.request.use(config => {
 service.interceptors.response.use(
   response => {
     const res = response.data
-    if (!res.code) {
-      // if (res.error === 'ERROR_ACCESS_NEED_AUTH') {
-      //   MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
-      //     confirmButtonText: '重新登录',
-      //     cancelButtonText: '取消',
-      //     type: 'warning'
-      //   }).then(() => {
-      //     store.dispatch('FedLogOut').then(() => {
-      //       location.reload() // 为了重新实例化vue-router对象 避免bug
-      //     })
-      //   })
-      // } else {
-      Message.error(res.message || 'status 为200 但是code 不存在')
-      // }
+    if (res.code !== '0') {
+      // 失败
+      Message.error(`${res.code}:${res.message}`)
       return Promise.reject('error')
     } else {
+      // 成功
       if (res.result === undefined || Object.keys(res.result).length === 0) {
         res.result = []
       }
-      console.log('response ================>', res)
+      console.log('response success ================>', res)
       return res
     }
   },
