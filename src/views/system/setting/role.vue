@@ -30,8 +30,8 @@
 
       <!-- 分页 -->
       <div class="pagination-container">
-        <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pageForm.pageNum"
-          :page-sizes="[10,20,30,50]" :page-size="pageForm.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="pageForm.total">
+        <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pageForm.num"
+          :page-sizes="[10,20,30,50]" :page-size="pageForm.size" layout="total, sizes, prev, pager, next, jumper" :total="pageForm.total">
         </el-pagination>
       </div>
 
@@ -56,14 +56,15 @@
         <el-row>
           <el-tag type="danger" style="margin-bottom:10px;">当前角色:{{currentRoleNode.name}}</el-tag>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="6" style="border-right:1px solid #75B8F9;max-height:400px;overflow:auto;">
+        <el-row>
+          <el-col :span="8" style="border-right:1px solid #75B8F9;max-height:300px;overflow:scroll;">
             <div class="grid-content bg-purple">
-              <el-tree :data="menuList" ref="menuTree" check-strictly show-checkbox default-expand-all node-key="id" :props="{label: 'title'}" @check-change="menuTreeCheckChange">
+              <el-tree :data="menuList" ref="menuTree" check-strictly show-checkbox default-expand-all node-key="id" :props="{label: 'title'}"
+                @check-change="menuTreeCheckChange">
               </el-tree>
             </div>
           </el-col>
-          <el-col :span="18" style="max-height:400px;overflow:auto;">
+          <el-col :span="16" style="max-height:300px;overflow:scroll;">
             <div class="grid-content bg-purple">
               <el-checkbox-group v-model="checkedActionList">
                 <div v-for="action in actionList" style="margin-bottom:3px;" :key="action.title">
@@ -91,12 +92,15 @@
     getRole,
     editRole,
     delRole
-  } from '@/api/system-management'
+  } from '@/api/system/setting'
   import {
     getMenuList,
     getMenuActionList
-  } from '@/api/system-management'
-  import {} from '@/api/system-management'
+  } from '@/api/system/setting'
+  import {
+    distrRoleActions,
+    getRoleFuncList
+  } from '@/api/system/setting'
   import customEvalArray from './eval.js'
   export default {
     name: 'sys-setting-role', // name 必须跟路由的name 不然不能缓存
@@ -109,8 +113,8 @@
         },
         pageForm: {
           total: 1,
-          pageNum: 1,
-          pageSize: 10
+          num: 1,
+          size: 10
         },
         dialogStatus: false,
         dialogLoading: false,
@@ -138,8 +142,8 @@
       getList() {
         this.table.loading = true
         getRoleList({
-          pageNum: this.pageForm.pageNum,
-          pageSize: this.pageForm.pageSize
+          num: this.pageForm.num,
+          size: this.pageForm.size
         }).then(data => {
           this.table.list = data.result
           this.pageForm.total = data.total
@@ -208,17 +212,17 @@
       },
       // 改变分页的每页条数
       handleSizeChange(val) {
-        this.pageForm.pageSize = val
+        this.pageForm.size = val
         this.getList()
       },
       // 改变分页的页数
       handleCurrentChange(val) {
-        this.pageForm.pageNum = val
+        this.pageForm.num = val
         this.getList()
       },
       resetPage() {
-        this.pageForm.pageNum = 1
-        this.pageForm.pageSize = 10
+        this.pageForm.num = 1
+        this.pageForm.size = 10
       },
       // dialog
       dialogSubmit() {
@@ -227,12 +231,6 @@
             this.executeSubmit()
           }
         })
-      },
-      /** dialog 关闭初始化数据 */
-      dialogClose() {
-        // 重置表单
-        this.$refs.dialogForm.resetFields()
-        this.dialogForm = {}
       },
       executeSubmit() {
         this.dialogLoading = true
@@ -254,6 +252,12 @@
           })
         }
       },
+      /** dialog 关闭初始化数据 */
+      dialogClose() {
+        // 重置表单
+        this.$refs.dialogForm.resetFields()
+        this.dialogForm = {}
+      },
       // 分配权限按钮点击事件
       distrAuth(e) {
         this.dialogAuthStatus = true
@@ -263,6 +267,8 @@
           // 处理菜单数据 如果没有路由地址则不允许选中
           this.menuList = customEvalArray(data.result)
         })
+        // 获取角色已拥有的菜单功能权限
+        this.getRoleOwnAction()
       },
       // 分配权限dialog 关闭事件
       dialogAuthClose() {
@@ -270,33 +276,77 @@
       },
       // 分配权限树形菜单点击事件
       menuTreeCheckChange(data, check) {
-        const actions = { list: [] }
+        const actions = {
+          list: []
+        }
         // 获取选中的菜单拥有的功能
         if (check) {
-          // 构造菜单数据
+          // 点击选中 构造菜单功能数据
           actions.title = data.title
           actions.menuId = data.id
           getMenuActionList(data.id).then(data => {
             data.result.forEach(item => {
-              // 构造功能数据
-              actions.list.push({
-                actionName: item.name,
-                id: item.id
-              })
+              // 不显示隐藏功能
+              if (item.isShow) {
+                // 构造功能数据
+                actions.list.push({
+                  actionName: item.name,
+                  id: item.id
+                })
+              }
             })
           })
           this.actionList.push(actions)
+          // 获取角色已拥有的菜单功能权限
+          this.getRoleOwnAction()
         } else {
           // 取消选中 移除功能数据
           this.actionList.splice(this.actionList.findIndex(item => item.menuId === data.id), 1)
           // 移除多选框保留的数据
           this.checkedActionList = []
+          // 获取角色已拥有的菜单功能权限
+          this.getRoleOwnAction()
         }
       },
-      // 分配权限dialog 确定提交事件
+      // 获取角色已拥有的菜单功能权限
+      getRoleOwnAction() {
+        // 获取角色已拥有的菜单功能权限
+        getRoleFuncList(this.currentRoleNode.id).then(data => {
+          // 构建角色已拥有的权限数据
+          data.result.forEach(item => {
+            this.checkedActionList.push(item.rfuncId)
+          })
+        })
+      },
+      // 分配权限dialog
       dialogActionSubmit() {
-        console.log(this.checkedActionList)
-        console.log(this.currentRoleNode.id)
+        if (this.checkedActionList.length === 0) {
+          this.$confirm('确定不给此角色分配权限吗, 是否继续?', '分配角色权限', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            this.executeActionSubmit()
+          })
+        } else {
+          this.executeActionSubmit()
+        }
+      },
+      // 分配权限确定提交事件
+      executeActionSubmit() {
+        // 构造请求数据
+        const funcList = []
+        this.checkedActionList.forEach(item => {
+          funcList.push({
+            rfuncId: item
+          })
+        })
+        distrRoleActions({
+          roleId: this.currentRoleNode.id,
+          roleFuncList: funcList
+        }).then(() => {
+          this.dialogAuthStatus = false
+        })
       }
     }
   }

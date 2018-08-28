@@ -1,33 +1,23 @@
 import request from '@/utils/request'
 
-export function loginByUsername(username, password) {
-  const data = {
-    clientName: 'backend',
-    clientSecret: 'hzg-dev',
-    loginName: username,
-    password
-
-  }
+/**
+ * 登录
+ * @param {*} payload
+ */
+export function login(payload) {
   return request({
-    url: '/security/token',
-    method: 'post',
-    params: data
+    url: '/sys/set/userLogin',
+    data: payload
   })
 }
 
-export function logout() {
+/**
+ * 刷新登录
+ * @param {*} payload
+ */
+export function refLogin(payload) {
   return request({
-    url: '/login/logout',
-    method: 'post'
-  })
-}
-
-export function getUserInfo(token) {
-  return request({
-    url: '/user/info',
-    method: 'get',
-    params: {
-      token
-    }
+    url: '/sys/set/userRefreshLogin',
+    data: payload
   })
 }

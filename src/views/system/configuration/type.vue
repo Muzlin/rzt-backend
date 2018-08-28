@@ -17,25 +17,13 @@
       <el-table :data="table.list" border style="width: 100%;margin-top:5px;" v-loading="table.loading" @selection-change="getTableChangeVal">
         <el-table-column type="selection" width="55">
         </el-table-column>
-        <el-table-column prop="name" label="功能名称">
-        </el-table-column>
-        <el-table-column prop="cssClass" label="样式">
-          <template slot-scope="scope">
-            <el-tag :type="scope.row.cssClass">{{scope.row.cssClass}}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="function" label="函数名称">
+        <el-table-column prop="name" label="角色名称">
         </el-table-column>
         <el-table-column prop="remark" label="描述">
         </el-table-column>
-        <el-table-column prop="isShow" label="是否显示">
+        <el-table-column label="操作">
           <template slot-scope="scope">
-            <span>{{scope.row.isShow?'显示':'隐藏'}}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="isUse" label="是否启用">
-          <template slot-scope="scope">
-            <span>{{scope.row.isUse?'启用':'禁用'}}</span>
+            <el-button type="text" @click="distrAuth(scope.row)">分配权限</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -48,47 +36,47 @@
       </div>
 
       <!-- dialog -->
-      <el-dialog :title="dialogAdd?'新增功能':'修改功能'" :visible.sync="dialogStatus" @close="dialogClose">
+      <el-dialog :title="dialogAdd?'新增角色':'修改角色'" :visible.sync="dialogStatus" @close="dialogClose">
         <el-form :model="dialogForm" ref="dialogForm" label-position="left" label-width="70px" style='width: 400px; margin-left:50px;'>
-          <el-form-item label="功能样式" style="width:1000px" size="mini">
-            <el-radio-group v-model="dialogForm.cssClass" :fill="radioFill" @change="radioChange">
-              <el-radio-button label="default">默认</el-radio-button>
-              <el-radio-button label="primary">主要</el-radio-button>
-              <el-radio-button label="success">成功</el-radio-button>
-              <el-radio-button label="info">信息</el-radio-button>
-              <el-radio-button label="warning">警告</el-radio-button>
-              <el-radio-button label="danger">危险</el-radio-button>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="函数名称">
-            <el-input v-model="dialogForm.funcName" auto-complete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="功能名称">
+          <el-form-item label="角色名称">
             <el-input v-model="dialogForm.name" auto-complete="off"></el-input>
           </el-form-item>
-          <el-form-item label="功能描述">
+          <el-form-item label="角色描述">
             <el-input v-model="dialogForm.remark" auto-complete="off"></el-input>
-          </el-form-item>
-          <el-form-item label="是否显示">
-            <el-select v-model="dialogForm.isShow" placeholder="请选择">
-              <el-option label="显示" value="true">
-              </el-option>
-              <el-option label="隐藏" value="false">
-              </el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="是否启用">
-            <el-select v-model="dialogForm.isUse" placeholder="请选择">
-              <el-option label="启用" value="true">
-              </el-option>
-              <el-option label="禁用" value="false">
-              </el-option>
-            </el-select>
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
           <el-button @click="dialogStatus = false">取 消</el-button>
           <el-button type="primary" @click="dialogSubmit">确 定</el-button>
+        </div>
+      </el-dialog>
+
+      <!-- 权限分配 dialog -->
+      <el-dialog title="分配权限" width="800px;" :visible.sync="dialogAuthStatus" @close="dialogAuthClose">
+        <el-row>
+          <el-tag type="danger" style="margin-bottom:10px;">当前角色:{{currentRoleNode.name}}</el-tag>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="6" style="border-right:1px solid #75B8F9;max-height:400px;overflow:auto;">
+            <div class="grid-content bg-purple">
+              <el-tree :data="menuList" ref="menuTree" check-strictly show-checkbox default-expand-all node-key="id" :props="{label: 'title'}" @check-change="menuTreeCheckChange">
+              </el-tree>
+            </div>
+          </el-col>
+          <el-col :span="18" style="max-height:400px;overflow:auto;">
+            <div class="grid-content bg-purple">
+              <el-checkbox-group v-model="checkedActionList">
+                <div v-for="action in actionList" style="margin-bottom:3px;" :key="action.title">
+                  <el-tag size="mini" style="margin:0 5px;">{{action.title}}</el-tag>
+                  <el-checkbox v-for="item in action.list" :key="item.id" :label="item.id">{{item.actionName}}</el-checkbox>
+                </div>
+              </el-checkbox-group>
+            </div>
+          </el-col>
+        </el-row>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="dialogAuthStatus = false" size="mini">取 消</el-button>
+          <el-button type="primary" @click="dialogActionSubmit" size="mini">确 定</el-button>
         </div>
       </el-dialog>
     </div>
@@ -97,9 +85,19 @@
 
 
 <script>
-  import { getFuncPage, addFunc, getFunc, editFunc, delFunc } from '@/api/system/setting'
+  import {
+    getRoleList,
+    addRole,
+    getRole,
+    editRole,
+    delRole
+  } from '@/api/system/setting'
+  import {
+    getMenuActionList
+  } from '@/api/system/setting'
+  import {} from '@/api/system/setting'
   export default {
-    name: 'sys-setting-action', // name 必须跟路由的name 不然不能缓存
+    name: 'sys-setting-role', // name 必须跟路由的name 不然不能缓存
     data() {
       return {
         table: {
@@ -115,15 +113,19 @@
         dialogStatus: false,
         dialogLoading: false,
         dialogAdd: true,
+        dialogForm: {},
+        // 分配权限的菜单树
         menuList: [],
+        // 选中的菜单
         checkedMenuList: [],
-        dialogForm: {
-          isShow: 'true',
-          isUse: 'true',
-          cssClass: 'primary'
-        },
-        /** 单选按钮激活填充颜色 */
-        radioFill: ''
+        // 根据选中的菜单获取菜单拥有的功能
+        actionList: [],
+        // 选中的所有功能集合
+        checkedActionList: [],
+        // 权限分配dialog 状态
+        dialogAuthStatus: false,
+        // 当前选择的角色节点
+        currentRoleNode: {}
       }
     },
     created() {
@@ -133,12 +135,12 @@
       /** common */
       getList() {
         this.table.loading = true
-        getFuncPage({
+        getRoleList({
           num: this.pageForm.num,
           size: this.pageForm.size
         }).then(data => {
-          this.table.list = data.result || []
-          this.pageForm.total = data.total || 0
+          this.table.list = data.result
+          this.pageForm.total = data.total
           this.table.loading = false
         }, () => {
           this.table.loading = false
@@ -159,16 +161,10 @@
         // 请求数据
         this.getList()
       },
-      resetSearch() {
-        this.$refs.searchForm.resetFields()
-      },
       /** 操作栏 */
       add() {
-        // 打开dialog
         this.dialogAdd = true
         this.openDialogAndLoading()
-        // 获取按钮样式 改变UI显示
-        this.radioChange(this.dialogForm.cssClass)
       },
       edit() {
         if (this.table.tableChange.length !== 1) {
@@ -176,14 +172,9 @@
         } else {
           this.dialogAdd = false
           this.openDialogAndLoading()
-          // 获取功能信息
-          getFunc(this.table.tableChange[0].id).then(data => {
+          // 获取角色信息
+          getRole(this.table.tableChange[0].id).then(data => {
             this.dialogForm = data.result
-            // 改变bool 为string
-            this.dialogForm.isShow = data.result.isShow.toString()
-            this.dialogForm.isUse = data.result.isUse.toString()
-            // 获取按钮样式 改变UI显示
-            this.radioChange(data.result.cssClass)
           }).catch(() => {
             this.closeDialogAndLoading()
           })
@@ -193,7 +184,7 @@
         if (this.table.tableChange.length === 0) {
           this.$message.info('请选择数据')
         } else {
-          this.$confirm('确定删除选中的功能, 是否继续?', '删除功能', {
+          this.$confirm('确定删除选中的角色, 是否继续?', '删除角色', {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
             type: 'warning'
@@ -202,8 +193,7 @@
             this.table.tableChange.map(item => {
               ids.push(item.id)
             })
-            console.log(ids)
-            delFunc(ids).then(() => {
+            delRole(ids).then(() => {
               this.table.tableChange = []
               this.getList()
             })
@@ -240,17 +230,12 @@
       dialogClose() {
         // 重置表单
         this.$refs.dialogForm.resetFields()
-        this.dialogForm = {
-          // 初始化数据
-          isShow: 'true',
-          isUse: 'true',
-          cssClass: 'primary'
-        }
+        this.dialogForm = {}
       },
       executeSubmit() {
         this.dialogLoading = true
         if (this.dialogAdd) {
-          addFunc(this.dialogForm).then(data => {
+          addRole(this.dialogForm).then(data => {
             this.closeDialogAndLoading()
             // 获取最新的列表
             this.getList()
@@ -259,7 +244,7 @@
             this.dialogLoading = false
           })
         } else {
-          editFunc(this.dialogForm).then(data => {
+          editRole(this.dialogForm).then(data => {
             this.closeDialogAndLoading()
             this.getList()
           }, () => {
@@ -267,27 +252,44 @@
           })
         }
       },
-      /** dialog样式单选按钮改变事件 */
-      radioChange(e) {
-        switch (e) {
-          case 'primary':
-            this.radioFill = '#4BA2F9'
-            break
-          case 'success':
-            this.radioFill = '#6DBE4C'
-            break
-          case 'info':
-            this.radioFill = '#909399'
-            break
-          case 'warning':
-            this.radioFill = '#E2A04F'
-            break
-          case 'danger':
-            this.radioFill = '#F16E72'
-            break
-          default:
-            this.radioFill = '#D8CCB3'
+      // 分配权限按钮点击事件
+      distrAuth(e) {
+        this.dialogAuthStatus = true
+        this.currentRoleNode = e
+      },
+      // 分配权限dialog 关闭事件
+      dialogAuthClose() {
+
+      },
+      // 分配权限树形菜单点击事件
+      menuTreeCheckChange(data, check) {
+        const actions = { list: [] }
+        // 获取选中的菜单拥有的功能
+        if (check) {
+          // 构造菜单数据
+          actions.title = data.title
+          actions.menuId = data.id
+          getMenuActionList(data.id).then(data => {
+            data.result.forEach(item => {
+              // 构造功能数据
+              actions.list.push({
+                actionName: item.name,
+                id: item.id
+              })
+            })
+          })
+          this.actionList.push(actions)
+        } else {
+          // 取消选中 移除功能数据
+          this.actionList.splice(this.actionList.findIndex(item => item.menuId === data.id), 1)
+          // 移除多选框保留的数据
+          this.checkedActionList = []
         }
+      },
+      // 分配权限dialog 确定提交事件
+      dialogActionSubmit() {
+        console.log(this.checkedActionList)
+        console.log(this.currentRoleNode.id)
       }
     }
   }

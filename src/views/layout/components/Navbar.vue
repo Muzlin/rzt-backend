@@ -37,6 +37,9 @@
           <el-dropdown-item divided>
             <span @click="logout" style="display:block;">{{$t('navbar.logOut')}}</span>
           </el-dropdown-item>
+          <el-dropdown-item divided>
+            <span @click="updateCache" style="display:block;">更新缓存</span>
+          </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </div>
@@ -51,6 +54,7 @@ import ErrorLog from '@/components/ErrorLog'
 import Screenfull from '@/components/Screenfull'
 import LangSelect from '@/components/LangSelect'
 import ThemePicker from '@/components/ThemePicker'
+import { updateCache } from '@/api/system/setting'
 
 export default {
   components: {
@@ -73,8 +77,13 @@ export default {
       this.$store.dispatch('toggleSideBar')
     },
     logout() {
-      this.$store.dispatch('LogOut').then(() => {
+      this.$store.dispatch('FedLogOut').then(() => {
         location.reload()// In order to re-instantiate the vue-router object to avoid bugs
+      })
+    },
+    updateCache() {
+      updateCache().then(() => {
+        this.$message.success('缓存更新成功')
       })
     }
   }

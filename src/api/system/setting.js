@@ -1,3 +1,6 @@
+/**
+ * 系统管理-系统设置API
+ */
 import request from '@/utils/request'
 
 // #region 功能相关
@@ -6,12 +9,12 @@ import request from '@/utils/request'
  * 分页获取功能列表
  *
  * @export
- * @param {*} payload {pageNum,pageSize}
+ * @param {*} payload {num,size}
  * @returns
  */
 export function getFuncPage(payload) {
   return request({
-    url: '/sys/funcListPage',
+    url: '/sys/set/funcListPage',
     method: 'post',
     data: payload
   })
@@ -21,12 +24,12 @@ export function getFuncPage(payload) {
  * 获取所有功能
  *
  * @export
- * @param {*} payload {pageNum,pageSize}
+ * @param {*} payload {num,size}
  * @returns
  */
 export function getFuncAll(payload) {
   return request({
-    url: '/sys/funcList',
+    url: '/sys/set/funcList',
     method: 'post',
     data: payload
   })
@@ -41,7 +44,7 @@ export function getFuncAll(payload) {
  */
 export function getFunc(payload) {
   return request({
-    url: '/sys/funcInfo',
+    url: '/sys/set/funcInfo',
     method: 'post',
     data: payload
   })
@@ -55,7 +58,7 @@ export function getFunc(payload) {
  */
 export function addFunc(payload) {
   return request({
-    url: '/sys/funcAdd',
+    url: '/sys/set/funcAdd',
     method: 'post',
     data: payload
   })
@@ -69,7 +72,7 @@ export function addFunc(payload) {
  */
 export function editFunc(payload) {
   return request({
-    url: '/sys/funcEdit',
+    url: '/sys/set/funcEdit',
     method: 'post',
     data: payload
   })
@@ -83,7 +86,7 @@ export function editFunc(payload) {
  */
 export function delFunc(payload) {
   return request({
-    url: '/sys/funcDel',
+    url: '/sys/set/funcDel',
     method: 'post',
     data: payload
   })
@@ -101,7 +104,7 @@ export function delFunc(payload) {
  */
 export function getMenu(payload) {
   return request({
-    url: '/sys/menInfo',
+    url: '/sys/set/menInfo',
     method: 'post',
     data: payload
   })
@@ -115,7 +118,7 @@ export function getMenu(payload) {
  */
 export function addMenu(payload) {
   return request({
-    url: '/sys/menuAdd',
+    url: '/sys/set/menuAdd',
     method: 'post',
     data: payload
   })
@@ -129,7 +132,7 @@ export function addMenu(payload) {
  */
 export function delMenu(payload) {
   return request({
-    url: '/sys/menuDel',
+    url: '/sys/set/menuDel',
     method: 'post',
     data: payload
   })
@@ -143,7 +146,7 @@ export function delMenu(payload) {
  */
 export function editMenu(payload) {
   return request({
-    url: '/sys/menuEdit',
+    url: '/sys/set/menuEdit',
     method: 'post',
     data: payload
   })
@@ -157,7 +160,7 @@ export function editMenu(payload) {
  */
 export function getMenuList() {
   return request({
-    url: '/sys/menuList'
+    url: '/sys/set/menuList'
   })
 }
 
@@ -170,7 +173,7 @@ export function getMenuList() {
  */
 export function getMenuActionList(payload) {
   return request({
-    url: '/sys/runFuncList',
+    url: '/sys/set/menuFuncList',
     method: 'post',
     data: payload
   })
@@ -189,7 +192,7 @@ export function getMenuActionList(payload) {
  */
 export function addRole(payload) {
   return request({
-    url: '/sys/roleAdd',
+    url: '/sys/set/roleAdd',
     data: payload
   })
 }
@@ -203,7 +206,7 @@ export function addRole(payload) {
  */
 export function delRole(payload) {
   return request({
-    url: '/sys/roleDel',
+    url: '/sys/set/roleDel',
     data: payload
   })
 }
@@ -217,7 +220,7 @@ export function delRole(payload) {
  */
 export function editRole(payload) {
   return request({
-    url: '/sys/roleEdit',
+    url: '/sys/set/roleEdit',
     data: payload
   })
 }
@@ -231,7 +234,7 @@ export function editRole(payload) {
  */
 export function getRole(payload) {
   return request({
-    url: '/sys/roleInfo',
+    url: '/sys/set/roleInfo',
     data: payload
   })
 }
@@ -245,14 +248,105 @@ export function getRole(payload) {
  */
 export function getRoleList(payload) {
   return request({
-    url: '/sys/roleList',
-    data: payload || { pageNum: '1', pageSize: '1000' }
+    url: '/sys/set/roleList',
+    data: payload || {
+      num: '1',
+      size: '1000'
+    }
+  })
+}
+
+/**
+ * 获取角色拥有的权限(功能)
+ * @param {*} payload
+ */
+export function getRoleFuncList(payload) {
+  return request({
+    url: '/sys/set/roleFuncList',
+    data: payload
   })
 }
 
 // #endregion
 
 // #region 用户相关
+
+/**
+ * 新增用户
+ * @param {*} payload
+ */
+export function addUser(payload) {
+  return request({
+    url: '/sys/set/userAdd',
+    data: payload
+  })
+}
+
+/**
+ * 获取当前登录用户
+ * @param {*} payload
+ */
+export function getCurrentUser(payload) {
+  return request({
+    url: '/sys/set/userCurrentInfo',
+    data: payload
+  })
+}
+
+/**
+ * 删除用户
+ * @param {*} payload
+ */
+export function delUser(payload) {
+  return request({
+    url: '/sys/set/userDel',
+    data: payload
+  })
+}
+
+/**
+ * 修改用户
+ * @param {*} payload
+ */
+export function editUser(payload) {
+  return request({
+    url: '/sys/set/userEdit',
+    data: payload
+  })
+}
+
+/**
+ * 修改用户密码
+ * @param {*} payload
+ */
+export function editUserPwd(payload) {
+  return request({
+    url: '/sys/set/userEditPwd',
+    data: payload
+  })
+}
+
+/**
+ * 获取用户
+ * @param {*} payload
+ */
+export function getUser(payload) {
+  return request({
+    url: '/sys/set/userInfo',
+    data: payload
+  })
+}
+
+/**
+ * 分页获取用户
+ * @param {*} payload
+ */
+export function getUserPage(payload) {
+  return request({
+    url: '/sys/set/userListByPage',
+    data: payload
+  })
+}
 
 // #endregion
 
@@ -267,7 +361,7 @@ export function getRoleList(payload) {
  */
 export function addOrganization(payload) {
   return request({
-    url: '/sys/organizationAdd',
+    url: '/sys/set/organizationAdd',
     data: payload
   })
 }
@@ -281,7 +375,7 @@ export function addOrganization(payload) {
  */
 export function delOrganization(payload) {
   return request({
-    url: '/sys/organizationDel',
+    url: '/sys/set/organizationDel',
     data: payload
   })
 }
@@ -295,7 +389,7 @@ export function delOrganization(payload) {
  */
 export function editOrganization(payload) {
   return request({
-    url: '/sys/organizationEdit',
+    url: '/sys/set/organizationEdit',
     data: payload
   })
 }
@@ -309,7 +403,7 @@ export function editOrganization(payload) {
  */
 export function getOrganization(payload) {
   return request({
-    url: '/sys/organizationInfo',
+    url: '/sys/set/organizationInfo',
     data: payload
   })
 }
@@ -323,7 +417,7 @@ export function getOrganization(payload) {
  */
 export function getOrganizationList(payload) {
   return request({
-    url: '/sys/organizationList',
+    url: '/sys/set/organizationList',
     data: payload
   })
 }
@@ -340,7 +434,7 @@ export function getOrganizationList(payload) {
  */
 export function addJob(payload) {
   return request({
-    url: '/sys/jobAdd',
+    url: '/sys/set/jobAdd',
     data: payload
   })
 }
@@ -353,7 +447,7 @@ export function addJob(payload) {
  */
 export function delJob(payload) {
   return request({
-    url: '/sys/jobDel',
+    url: '/sys/set/jobDel',
     data: payload
   })
 }
@@ -366,7 +460,7 @@ export function delJob(payload) {
  */
 export function editJob(payload) {
   return request({
-    url: '/sys/jobEdit',
+    url: '/sys/set/jobEdit',
     data: payload
   })
 }
@@ -379,7 +473,7 @@ export function editJob(payload) {
  */
 export function getJob(payload) {
   return request({
-    url: '/sys/jobInfo',
+    url: '/sys/set/jobInfo',
     data: payload
   })
 }
@@ -392,7 +486,7 @@ export function getJob(payload) {
  */
 export function getJobListByOrgId(payload) {
   return request({
-    url: '/sys/jobList',
+    url: '/sys/set/jobList',
     data: payload
   })
 }
@@ -405,7 +499,7 @@ export function getJobListByOrgId(payload) {
  */
 export function getRoleListByJobId(payload) {
   return request({
-    url: '/sys/jobRoleList',
+    url: '/sys/set/jobRoleList',
     data: payload
   })
 }
@@ -423,7 +517,7 @@ export function getRoleListByJobId(payload) {
  */
 export function distrJobRoles(payload) {
   return request({
-    url: '/sys/jobRoleAllot',
+    url: '/sys/set/jobRoleAllot',
     data: payload
   })
 }
@@ -437,7 +531,7 @@ export function distrJobRoles(payload) {
  */
 export function distrMenuActions(payload) {
   return request({
-    url: '/sys/runFuncAllot',
+    url: '/sys/set/menuFuncAllot',
     data: payload
   })
 }
@@ -451,8 +545,32 @@ export function distrMenuActions(payload) {
  */
 export function distrRoleActions(payload) {
   return request({
-    url: '/sys/roleFuncAllot',
+    url: '/sys/set/roleFuncAllot',
     data: payload
+  })
+}
+
+/**
+ * 分配用户岗位
+ * @param {*} payload
+ */
+export function distrUserJobs(payload) {
+  return request({
+    url: '/sys/set/userJobAllot',
+    data: payload
+  })
+}
+
+// #endregion
+
+// #region 全局相关
+
+/**
+ * 更新缓存
+ */
+export function updateCache() {
+  return request({
+    url: '/sys/set/refreshRunFuncCache'
   })
 }
 

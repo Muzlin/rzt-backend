@@ -1,25 +1,13 @@
-import {
-  loginByUsername,
-  logout,
-  getUserInfo
-} from '@/api/login'
-import {
-  getToken,
-  setToken,
-  removeToken
-} from '@/utils/auth'
-import {
-  getMenuList
-} from '@/api/system-management'
-import {
-  MessageBox
-} from 'element-ui'
+import { login } from '@/api/login'
+import { getToken, setToken, removeToken, getUserInfo, setUserInfo, removeUserInfo } from '@/utils/auth'
+import { getMenuList } from '@/api/system/setting'
 
 const user = {
   state: {
     token: getToken(),
     avatar: '',
-    menus: []
+    menus: [],
+    userInfo: getUserInfo()
   },
 
   mutations: {
@@ -31,22 +19,27 @@ const user = {
     },
     SET_MENUS: (state, menus) => {
       state.menus = menus
+    },
+    SET_USER_INFO: (state, userInfo) => {
+      state.userInfo = userInfo
     }
   },
 
   actions: {
     // 用户名登录
-    LoginByUsername({ commit }, userInfo) {
-      const username = userInfo.username.trim()
+    Login({ commit }, userInfo) {
+      // 去除登录账号的空格
+      userInfo.loginName = userInfo.loginName.trim()
       return new Promise((resolve, reject) => {
-        loginByUsername(username, userInfo.password).then(result => {
-          commit('SET_TOKEN', result.token)
-          setToken(result.token)
+        login(userInfo).then(data => {
+          // 设置token到 cookie
+          commit('SET_TOKEN', data.result.token)
+          setToken(data.result.token)
+          // 设置用户信息到 cookie
+          commit('SET_USER_INFO', data.result.user)
+          setUserInfo(data.result.user)
           resolve()
         }).catch(error => {
-          // TODO:失败写入token 信息 绕过登录验证
-          commit('SET_TOKEN', 'dsadsad')
-          setToken('dsahdjkh')
           reject(error)
         })
       })
@@ -56,20 +49,8 @@ const user = {
     GetUserMenus({ commit }) {
       return new Promise((resolve, reject) => {
         getMenuList().then(data => {
-          if (data.result.length === 0) {
-            MessageBox.confirm('你当前暂无权限，可以取消继续留在该页面，或者退出', '确定登出', {
-              confirmButtonText: '退出',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }).then(() => {
-              this.FedLogOut.then(() => {
-                location.reload() // 为了重新实例化vue-router对象 避免bug
-              })
-            })
-          } else {
-            // 设置拥有的菜单
-            commit('SET_MENUS', data.result)
-          }
+          // 设置拥有的菜单
+          commit('SET_MENUS', data.result)
           resolve(data.result)
         }).catch(err => {
           reject(err)
@@ -77,52 +58,19 @@ const user = {
       })
     },
 
-    // 第三方验证登录
-    // LoginByThirdparty({ commit, state }, code) {
-    //   return new Promise((resolve, reject) => {
-    //     commit('SET_CODE', code)
-    //     loginByThirdparty(state.status, state.email, state.code).then(response => {
-    //       commit('SET_TOKEN', response.data.token)
-    //       setToken(response.data.token)
-    //       resolve()
-    //     }).catch(error => {
-    //       reject(error)
-    //     })
-    //   })
-    // },
-
-    // 登出
-    LogOut({
-      commit,
-      state
-    }) {
-      return new Promise((resolve, reject) => {
-        logout(state.token).then(() => {
-          commit('SET_TOKEN', '')
-          commit('SET_ROLES', [])
-          removeToken()
-          resolve()
-        }).catch(error => {
-          reject(error)
-        })
-      })
-    },
-
     // 前端 登出
-    FedLogOut({
-      commit
-    }) {
+    FedLogOut({ commit }) {
       return new Promise(resolve => {
         commit('SET_TOKEN', '')
+        commit('SET_USER_INFO', '')
         removeToken()
+        removeUserInfo()
         resolve()
       })
     },
 
     // 动态修改权限
-    ChangeRoles({
-      commit
-    }, role) {
+    ChangeRoles({ commit }, role) {
       return new Promise(resolve => {
         commit('SET_TOKEN', role)
         setToken(role)

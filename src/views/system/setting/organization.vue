@@ -17,7 +17,7 @@
         </el-table-column>
         <el-table-column label="是否启用" width="80px;">
           <template slot-scope="scope">
-            <span>{{scope.row.use?'启用':'禁用'}}</span>
+            <span>{{scope.row.isUse?'启用':'禁用'}}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作">
@@ -46,7 +46,7 @@
             <el-input v-model="dialogForm.remark" auto-complete="off"></el-input>
           </el-form-item>
           <el-form-item label="是否启用">
-            <el-select v-model="dialogForm.use" placeholder="请选择状态">
+            <el-select v-model="dialogForm.isUse" placeholder="请选择状态">
               <el-option label="启用" value="true"></el-option>
               <el-option label="禁用" value="false"></el-option>
             </el-select>
@@ -69,6 +69,9 @@
           </el-table-column>
           <el-table-column prop="remark" label="描述">
           </el-table-column>
+          <el-table-column label="状态" width="70px;">
+            <span slot-scope="scope">{{scope.row.isUse?'启用':'禁用'}}</span>
+          </el-table-column>
           <el-table-column label="操作">
             <template slot-scope="scope">
               <el-button type="text" @click="delJob(scope.row)">删除</el-button>
@@ -87,7 +90,7 @@
               <el-input v-model="dialogJobForm.remark" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="是否启用">
-              <el-select v-model="dialogJobForm.use" placeholder="请选择">
+              <el-select v-model="dialogJobForm.isUse" placeholder="请选择">
                 <el-option label="启用" value="true"></el-option>
                 <el-option label="禁用" value="false"></el-option>
               </el-select>
@@ -98,7 +101,7 @@
             <el-button type="primary" @click="dialogJobInnerSubmit">确 定</el-button>
           </div>
         </el-dialog>
-        <!-- 内存dialog 分配角色 -->
+        <!-- 内层dialog 分配角色 -->
         <el-dialog title="分配角色" :visible.sync="dialogRoleInnerStatus" append-to-body @close="dialogRoleInnerClose">
           <el-checkbox-group v-model="checkRoleList" size="mini">
             <el-checkbox border v-for="role in roleList" :label="role.id" :key="role.id">{{role.name}}</el-checkbox>
@@ -125,11 +128,10 @@
     addJob,
     delJob,
     editJob,
-    getJob,
     getRoleListByJobId,
     getRoleList,
     distrJobRoles
-  } from '@/api/system-management'
+  } from '@/api/system/setting'
   import createUniqueString from '@/utils/createUniqueString'
   export default {
     name: 'sys-setting-organization',
@@ -144,11 +146,11 @@
         dialogAdd: true,
         dialogForm: {
           parentId: '',
-          use: 'true'
+          isUse: 'true'
         },
         dialogJobStatus: false,
         dialogJobForm: {
-          use: 'true'
+          isUse: 'true'
         },
         dialogJobInnerStatus: false,
         dialogJobAdd: false,
@@ -158,6 +160,8 @@
         currentOrganizationId: '',
         // 机构拥有的岗位
         jobOwnList: [],
+        // 当前选择的岗位
+        currentJobId: '',
         // 分配角色dialog
         dialogRoleInnerStatus: false,
         // 已选中的角色列表
@@ -200,8 +204,7 @@
         getOrganization(node.id).then(data => {
           this.dialogStatus = true
           this.dialogAdd = false
-          console.log(data.result)
-          data.result.use = data.result.use.toString()
+          data.result.isUse = data.result.isUse ? 'true' : 'false'
           this.dialogForm = data.result
         })
       },
@@ -212,7 +215,7 @@
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-          delOrganization(node.id).then(() => {
+          delOrganization([node.id]).then(() => {
             this.$message.success('删除成功')
             this.getList()
           })
@@ -292,31 +295,30 @@
         // 变更dialog状态
         this.dialogJobAdd = false
         // 将选中的岗位信息赋值到 dialogJobForm
-        this.dialogJobForm = e
+        this.dialogJobForm = JSON.parse(JSON.stringify(e))
+        this.dialogJobForm.isUse = this.dialogJobForm.isUse ? 'true' : 'false'
         // 开启内层dialog
         this.dialogJobInnerStatus = true
-        // 获取岗位信息
-        getJob(e.id).then(data => {
-          this.dialogJobForm = data.result
-        })
       },
       // 分配机构岗位内层确定事件
       dialogJobInnerSubmit() {
-        if (this.dialogActionAdd) {
+        if (this.dialogJobAdd) {
           // 新增机构岗位
           addJob(this.dialogJobForm).then(() => {
             // 添加到岗位列表中
             this.jobOwnList.push(this.dialogJobForm)
+            // 关闭添加岗位内层dialog
+            this.dialogJobInnerStatus = false
           })
         } else {
           // 修改机构岗位
           editJob(this.dialogJobForm).then(() => {
             // 替换列表中的类容
-            this.jobOwnList.forEach(item => {
-              if (item.id === this.dialogJobForm.id) {
-                item = this.dialogJobForm
-              }
+            getJobListByOrgId(this.currentOrganizationId).then(data => {
+              this.jobOwnList = data.result
             })
+            // 关闭添加岗位内层dialog
+            this.dialogJobInnerStatus = false
           })
         }
         // 关闭内层dialog
@@ -324,7 +326,7 @@
       },
       // 岗位分配角色
       distrRole(e) {
-        console.log('distr role', e)
+        this.currentJobId = e.id
         // 获取所有的角色
         getRoleList().then(data => {
           this.roleList = data.result
@@ -333,7 +335,9 @@
         getRoleListByJobId(e.id).then(data => {
           const roles = []
           data.result.forEach(item => {
-            roles.push(item.id)
+            if (item.roleId) {
+              roles.push(item.roleId)
+            }
           })
           this.checkRoleList = roles
         })
@@ -341,7 +345,17 @@
       },
       // 分配角色提交事件
       dialogRoleInnerSubmit() {
-        distrJobRoles(this.checkRoleList).then()
+        console.log(this.checkRoleList)
+        const roleList = []
+        // 构建请求数据
+        this.checkRoleList.forEach(item => {
+          roleList.push({
+            roleId: item
+          })
+        })
+        distrJobRoles({ jobId: this.currentJobId, jobRoleList: roleList }).then(() => {
+          this.dialogRoleInnerStatus = false
+        })
       },
       // 分配角色弹窗关闭事件
       dialogRoleInnerClose() {

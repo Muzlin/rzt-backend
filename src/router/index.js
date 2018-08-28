@@ -34,7 +34,7 @@ export default new Router({
 // import operation from './modules/operation'
 // import provider from './modules/provider'
 // import user from './modules/user'
-import system from './modules/system.js'
+import system from './modules/system'
 import business from './modules/business'
 export const asyncRouterMap = [
   ...system,

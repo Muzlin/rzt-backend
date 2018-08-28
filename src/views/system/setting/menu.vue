@@ -18,9 +18,9 @@
             <svg-icon v-if="scope.row.ico" :icon-class="scope.row.ico"></svg-icon>
           </template>
         </el-table-column>
-        <el-table-column label="是否显示" prop="show" width="80px">
+        <el-table-column label="是否显示" prop="isShow" width="80px">
           <template slot-scope="scope">
-            <span>{{scope.row.show?'显示':'隐藏'}}</span>
+            <span>{{scope.row.isShow?'显示':'隐藏'}}</span>
           </template>
         </el-table-column>
         <el-table-column label="描述" prop="remark">
@@ -59,7 +59,7 @@
             <el-input v-model="dialogForm.url" auto-complete="off"></el-input>
           </el-form-item>
           <el-form-item label="是否显示">
-            <el-select v-model="dialogForm.show" placeholder="请选择状态">
+            <el-select v-model="dialogForm.isShow" placeholder="请选择状态">
               <el-option label="显示" value="true"></el-option>
               <el-option label="隐藏" value="false"></el-option>
             </el-select>
@@ -77,22 +77,31 @@
           <el-tag type="danger" style="margin-bottom:10px;">当前菜单:{{currentMenuTitle}}</el-tag>
           <el-button type="primary" size="mini" @click="addAction">添加</el-button>
         </el-row>
-        <el-table :data="actionOwnList" border style="width: 100%;margin-top:5px;">
-          <el-table-column prop="name" label="名称">
-          </el-table-column>
-          <el-table-column prop="apiUrl" label="API地址">
-          </el-table-column>
-          <el-table-column prop="routeUrl" label="路由地址">
-          </el-table-column>
-          <el-table-column prop="remark" label="描述">
-          </el-table-column>
-          <el-table-column label="操作">
-            <template slot-scope="scope">
-              <el-button type="text" @click="delAction(scope.row)">删除</el-button>
-              <el-button type="text" @click="editAction(scope.row)">修改</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div style="height: 300px;overflow:scroll;margin-top:5px;">
+          <el-table :data="actionOwnList" border style="width: 100%;margin-top:5px;"
+            :row-class-name="tableRowClassName"
+          >
+            <el-table-column prop="name" label="名称">
+            </el-table-column>
+            <el-table-column prop="apiUrl" label="API地址">
+            </el-table-column>
+            <el-table-column prop="routeUrl" label="路由地址">
+            </el-table-column>
+            <el-table-column prop="remark" label="描述">
+            </el-table-column>
+            <!-- <el-table-column label="状态" prop="isShow" width="80px">
+              <template slot-scope="scope">
+                <span style="color:red">{{scope.row.isShow?'显示':'隐藏'}}</span>
+              </template>
+            </el-table-column> -->
+            <el-table-column label="操作">
+              <template slot-scope="scope">
+                <el-button type="text" @click="delAction(scope.row)">删除</el-button>
+                <el-button type="text" @click="editAction(scope.row)">修改</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
         <div slot="footer" class="dialog-footer">
           <el-button @click="dialogActionStatus = false">取 消</el-button>
           <el-button type="primary" @click="dialogActionSubmit()">确 定</el-button>
@@ -117,6 +126,9 @@
             <el-form-item label="路由地址">
               <el-input v-model="dialogActionForm.routeUrl" auto-complete="off"></el-input>
             </el-form-item>
+            <el-form-item label="代授权">
+              <el-input v-model="dialogActionForm.dependApiUrl" auto-complete="off"></el-input>
+            </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer">
             <el-button @click="dialogActionInnerStatus = false">取 消</el-button>
@@ -127,6 +139,12 @@
     </div>
   </div>
 </template>
+
+<style>
+  .el-table .warning-row {
+      background: #FDF5E8;
+  }
+</style>
 
 <script>
   import treeTable from '@/components/TreeTable'
@@ -139,7 +157,7 @@
     getFuncAll,
     getMenuActionList,
     distrMenuActions
-  } from '@/api/system-management'
+  } from '@/api/system/setting'
   import createUniqueString from '@/utils/createUniqueString'
   export default {
     name: 'sys-setting-menu',
@@ -154,7 +172,7 @@
         dialogAdd: true,
         dialogForm: {
           parentId: '',
-          show: 'true'
+          isisShow: 'true'
         },
         dialogActionStatus: false,
         dialogActionForm: {},
@@ -225,7 +243,7 @@
           // 添加父级菜单ID
           this.dialogForm.parentId = node.id
           // 绑定获取的菜单信息
-          data.result.show = data.result.show.toString()
+          data.result.isShow = data.result.isShow ? 'true' : 'false'
           this.dialogForm = data.result
         })
       },
@@ -274,7 +292,7 @@
         this.$refs.dialogForm.resetFields()
         // 清空data 里面的数据
         this.dialogForm = {
-          show: 'true'
+          isShow: 'true'
         }
       },
       // 分配菜单内层dialog 关闭事件
@@ -341,13 +359,15 @@
           // 消息提示
           this.$message.success('操作成功')
         })
+      },
+      // 改变功能列表 隐藏功能行的颜色
+      tableRowClassName({ row, rowIndex }) {
+        if (!row.isShow) {
+          return 'warning-row'
+        }
+        return ''
       }
     }
   }
 
 </script>
-
-<style lang="" scoped>
-
-
-</style>

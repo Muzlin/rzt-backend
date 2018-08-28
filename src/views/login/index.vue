@@ -62,17 +62,17 @@ export default {
   data() {
     return {
       loginForm: {
-        username : '',
-        password : ''
+        username: '',
+        password: ''
       },
       loginRules: {
         username: [
           { required: true, trigger: 'blur', message: '用户名不能为空' },
-          { min: 5, max: 10, message: '请输入5-10位用户名'}
+          { min: 5, max: 20, message: '请输入5-20位用户名' }
         ],
         password: [
-          { required: true, trigger: 'blur', message : '密码不能为空' },
-          { min: 6, max: 10, message: '密码不能小于6位'}
+          { required: true, trigger: 'blur', message: '密码不能为空' },
+          { min: 6, max: 10, message: '密码不能小于6位' }
         ]
       },
       passwordType: 'password',
@@ -92,7 +92,7 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('LoginByUsername', this.loginForm).then(() => {
+          this.$store.dispatch('Login', { loginName: this.loginForm.username, loginPwd: this.loginForm.password }).then(() => {
             this.loading = false
             this.$router.push({ path: '/' })
           }).catch(() => {
@@ -103,31 +103,7 @@ export default {
           return false
         }
       })
-    },
-    afterQRScan() {
-      // const hash = window.location.hash.slice(1)
-      // const hashObj = getQueryObject(hash)
-      // const originUrl = window.location.origin
-      // history.replaceState({}, '', originUrl)
-      // const codeMap = {
-      //   wechat: 'code',
-      //   tencent: 'code'
-      // }
-      // const codeName = hashObj[codeMap[this.auth_type]]
-      // if (!codeName) {
-      //   alert('第三方登录失败')
-      // } else {
-      //   this.$store.dispatch('LoginByThirdparty', codeName).then(() => {
-      //     this.$router.push({ path: '/' })
-      //   })
-      // }
     }
-  },
-  created() {
-    // window.addEventListener('hashchange', this.afterQRScan)
-  },
-  destroyed() {
-    // window.removeEventListener('hashchange', this.afterQRScan)
   }
 }
 </script>
