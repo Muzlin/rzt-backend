@@ -9,20 +9,40 @@ import {
  * @param menus 用户已拥有的菜单
  */
 function filterAsyncRouter(asyncRouterMap, menus) {
-  const menusStr = JSON.stringify(menus)
   // filter 过滤器返回一个新的数组
   const accessedRouters = asyncRouterMap.filter(route => {
-    // 通过title匹配
-    if (menusStr.indexOf(route.meta.title) >= 0) {
-      // 父级匹配到 则继续匹配子级
-      if (route.children && route.children.length) {
-        route.children = filterAsyncRouter(route.children, menus)
+    let menuId = ''
+    hasPermission(menus, route.meta.title, id => {
+      menuId = id
+    })
+    if (menuId) {
+      route.meta.id = menuId
+      // 匹配儿子
+      if (route.children && route.children.length > 0) {
+        filterAsyncRouter(route.children, menus)
       }
       return true
     }
     return false
   })
   return accessedRouters
+}
+
+/**
+ * 匹配是否具有权限 利用回调函数返回菜单ID
+ * @param {*} menus
+ * @param {*} title
+ * @param {*} callback 回调函数
+ */
+function hasPermission(menus, title, callback) {
+  for (var i in menus) {
+    if (menus[i].title === title) {
+      callback(menus[i].id)
+      break
+    } else {
+      hasPermission(menus[i].children, title, callback)
+    }
+  }
 }
 
 const permission = {

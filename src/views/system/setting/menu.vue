@@ -117,6 +117,12 @@
             <el-form-item label="功能名称">
               <el-input v-model="dialogActionForm.name" auto-complete="off"></el-input>
             </el-form-item>
+            <el-form-item label="右侧功能">
+              <el-select v-model="dialogActionForm.isRight" placeholder="">
+                <el-option label="是" value="true"></el-option>
+                <el-option label="否" value="false"></el-option>
+              </el-select>
+            </el-form-item>
             <el-form-item label="描述">
               <el-input v-model="dialogActionForm.remark" auto-complete="off"></el-input>
             </el-form-item>
@@ -127,7 +133,7 @@
               <el-input v-model="dialogActionForm.routeUrl" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="代授权">
-              <el-input v-model="dialogActionForm.dependApiUrl" auto-complete="off"></el-input>
+              <el-input v-model="dialogActionForm.dependUrl" auto-complete="off"></el-input>
             </el-form-item>
           </el-form>
           <div slot="footer" class="dialog-footer">
@@ -175,7 +181,9 @@
           isisShow: 'true'
         },
         dialogActionStatus: false,
-        dialogActionForm: {},
+        dialogActionForm: {
+          isRight: 'false'
+        },
         dialogActionInnerStatus: false,
         dialogActionAdd: false,
         // 当前选择的菜单标题
@@ -300,7 +308,9 @@
         // 重置表单
         this.$refs.dialogActionForm.resetFields()
         // 清空data 里面的数据
-        this.dialogActionForm = {}
+        this.dialogActionForm = {
+          isRight: 'false'
+        }
       },
       // 删除菜单功能
       delAction(e) {
@@ -324,6 +334,7 @@
         this.dialogActionAdd = false
         // 将选中的功能信息赋值到 dialogActionForm
         this.dialogActionForm = e
+        this.dialogActionForm.isRight = this.dialogActionForm.isRight ? 'true' : 'false'
         // 开启内层dialog
         this.dialogActionInnerStatus = true
       },

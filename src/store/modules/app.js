@@ -7,7 +7,10 @@ const app = {
       withoutAnimation: false
     },
     device: 'desktop',
-    language: Cookies.get('language') || 'en'
+    language: Cookies.get('language') || 'en',
+    currentMenuId: '',
+    currentMenuFuncList: [],
+    menuRunFuncList: []
   },
   mutations: {
     TOGGLE_SIDEBAR: state => {
@@ -30,6 +33,15 @@ const app = {
     SET_LANGUAGE: (state, language) => {
       state.language = language
       Cookies.set('language', language)
+    },
+    SET_CURRENT_MENU_ID: (state, currentMenuId) => {
+      state.currentMenuId = currentMenuId
+    },
+    SET_CURRENT_MENU_FUNC: (state, currentMenuFuncList) => {
+      state.currentMenuFuncList = currentMenuFuncList
+    },
+    SET_MENU_RUN_FUNC: (state, menuRunFuncList) => {
+      state.menuRunFuncList = menuRunFuncList
     }
   },
   actions: {
@@ -44,6 +56,18 @@ const app = {
     },
     setLanguage({ commit }, language) {
       commit('SET_LANGUAGE', language)
+    },
+    // 设置当前菜单ID
+    setCurrentMenuId({ commit }, currentMenuId) {
+      commit('SET_CURRENT_MENU_ID', currentMenuId)
+    },
+    // 设置当前菜单运行时功能
+    setCurrentMenuFuncList({ commit }, currentMenuFuncList) {
+      commit('SET_CURRENT_MENU_FUNC', currentMenuFuncList)
+    },
+    // 设置所有的菜单运行时功能
+    setMenuRunFuncList({ commit }, menuRunFuncList) {
+      commit('SET_MENU_RUN_FUNC', menuRunFuncList)
     }
   }
 }

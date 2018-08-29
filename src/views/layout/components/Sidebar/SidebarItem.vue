@@ -18,7 +18,7 @@
           <sidebar-item :is-nest="true" class="nest-menu" v-if="child.children&&child.children.length>0" :item="child" :key="child.path" :base-path="resolvePath(child.path)"></sidebar-item>
 
           <router-link v-else :to="resolvePath(child.path)" :key="child.name">
-            <el-menu-item :index="resolvePath(child.path)">
+            <el-menu-item :index="resolvePath(child.path)" @click="setMenuId(child)">
               <svg-icon v-if="child.meta&&child.meta.icon" :icon-class="child.meta.icon"></svg-icon>
               <span v-if="child.meta&&child.meta.title" slot="title">{{generateTitle(child.meta.title)}}</span>
             </el-menu-item>
@@ -32,6 +32,7 @@
 <script>
 import path from 'path'
 import { generateTitle } from '@/utils/i18n'
+import { getMenuActionList } from '@/api/system/setting'
 
 export default {
   name: 'SidebarItem',
@@ -74,8 +75,38 @@ export default {
     resolvePath(...paths) {
       return path.resolve(this.basePath, ...paths)
     },
-    generateTitle
+    generateTitle,
+    setMenuId(menu) {
+      const menuId = menu.meta.id
+      if (menuId) {
+        // 存入当前的菜单ID
+        this.$store.dispatch('setCurrentMenuId', menuId)
+        // 先从vuex中查询
+        const menuRunFuncList = this.$store.getters.menuRunFuncList || []
+        const currentMenuFuncList = menuRunFuncList.find(item => item.menuId === menuId)
+        console.log(currentMenuFuncList)
+        // 如果vuex中没有菜单当前的运行时功能 再请求接口
+        if (!currentMenuFuncList) {
+          // 获取当前菜单的运行时功能
+          getMenuActionList(menuId).then(data => {
+            // 存入当前的菜单运行时功能
+            this.$store.dispatch('setCurrentMenuFuncList', data.result)
+            // 是否存入vuex 构造返回数据
+            const v_menuFuncList = { menuId, list: data.result }
+            // 如果没有存入则存入vuex 菜单ID作为索引
+            if (!menuRunFuncList.includes(v_menuFuncList)) {
+              menuRunFuncList.push(v_menuFuncList)
+              this.$store.dispatch('setMenuRunFuncList', menuRunFuncList)
+            }
+          })
+        } else {
+          // 存入vuex
+          this.$store.dispatch('setCurrentMenuFuncList', currentMenuFuncList)
+        }
+      } else {
+        this.$message.error('获取运行时功能失效')
+      }
+    }
   }
 }
 </script>
-

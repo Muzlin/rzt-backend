@@ -1,3 +1,4 @@
+
 const getters = {
   sidebar: state => state.app.sidebar,
   language: state => state.app.language,
@@ -14,6 +15,9 @@ const getters = {
   token: state => state.user.token,
   avatar: state => state.user.avatar,
   name: state => state.user.name,
-  userInfo: state => state.user.userInfo
+  userInfo: state => state.user.userInfo,
+  currentMenuId: state => state.app.currentMenuId,
+  currentMenuFuncList: state => state.app.currentMenuFuncList,
+  menuRunFuncList: state => state.app.menuRunFuncList
 }
 export default getters
